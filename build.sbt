@@ -16,10 +16,10 @@ resolvers ++= Seq(
 	"spray repo Nightly" at "http://nightlies.spray.io")
 
 libraryDependencies ++= Seq(
-	"com.typesafe.akka" %% "akka-actor" % "2.2.0",
-	"com.typesafe.akka" %% "akka-docs" % "2.1-M1",
-	"com.typesafe.akka" %% "akka-slf4j" % "2.2.0",
-	"com.typesafe.akka" %% "akka-testkit" % "2.2.0",
+	"com.typesafe.akka" %% "akka-actor" % "2.2.1",
+	"com.typesafe.akka" %% "akka-kernel" % "2.2.1",
+	"com.typesafe.akka" %% "akka-slf4j" % "2.2.1",
+	"com.typesafe.akka" %% "akka-testkit" % "2.2.1",
 	"org.scalatest" %% "scalatest" % "1.9.1",
 	"io.spray"          %  "spray-can"       % "1.2-20130822",
   "io.spray"          %  "spray-routing"   % "1.2-20130822",
