@@ -1,28 +1,44 @@
 package org.maodian.akka
 
-import akka.actor._
-import spray.routing._
-import spray.httpx.SprayJsonSupport._
-import akka.actor.Props
-import org.maodian.akka.TicketProtocol._
-import spray.http.StatusCode
-import spray.http.StatusCodes
+import scala.concurrent.duration.DurationInt
+
+import org.maodian.akka.TicketProtocol.Event
+import org.maodian.akka.TicketProtocol.EventCreated
+import org.maodian.akka.TicketProtocol.Events
+import org.maodian.akka.TicketProtocol.GetEvents
+import org.maodian.akka.TicketProtocol.SoldOut
+import org.maodian.akka.TicketProtocol.Ticket
+import org.maodian.akka.TicketProtocol.TicketRequest
+
+import akka.actor.Actor
 import akka.actor.PoisonPill
+import akka.actor.Props
+import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.pattern.pipe
 import akka.util.Timeout
-import scala.concurrent.duration._
+import spray.http.StatusCodes
+import spray.httpx.SprayJsonSupport.sprayJsonMarshaller
+import spray.httpx.SprayJsonSupport.sprayJsonUnmarshaller
+import spray.routing.Directive.pimpApply
+import spray.routing.HttpService
+import spray.routing.RequestContext
+import spray.routing.Route
 
 class RestInterface extends Actor
-  with RestApi {
+  with RestApi with BoxOfficeCreator {
   def actorRefFactory = context
   def receive = runRoute(routes)
 }
 
-trait RestApi extends HttpService { actor: Actor =>
+class RemoteRestInterface extends RestInterface with RemoteBoxOfficeCreator {
+  
+}
+
+trait RestApi extends HttpService { actor: Actor with BoxOfficeCreator =>
   implicit val timeout = Timeout(5.seconds)
   implicit val ec = actorRefFactory.dispatcher
-  val boxOffice = context.actorOf(Props[BoxOffice])
+  val boxOffice = creatBoxOffice
 
   def routes: Route =
     path("events") {
