@@ -10,9 +10,14 @@ import akka.actor.Identify
 import akka.actor.ActorIdentity
 import akka.actor.Terminated
 import akka.actor.ReceiveTimeout
+import akka.actor.Terminated
 
 trait BoxOfficeCreator { this: Actor =>
   def creatBoxOffice: ActorRef = context.actorOf(Props[BoxOffice])
+}
+
+trait ConfiguredRemoteBoxOfficeDeployment extends BoxOfficeCreator { this: Actor =>
+  override def creatBoxOffice: ActorRef = context.actorOf(Props[RemoteOfficeBoxFowarder], "forwarder")
 }
 
 object RemoteBoxOfficeCreator {
@@ -29,6 +34,39 @@ trait RemoteBoxOfficeCreator extends BoxOfficeCreator { this: Actor =>
   def path = s"${protocol}://${systemName}@${host}:${port}/${actor}"
 
   override def creatBoxOffice = context.actorOf(Props(classOf[RemoteLookup], path), "lookupBoxOffice")
+}
+
+class RemoteOfficeBoxFowarder extends Actor with ActorLogging {
+  context.setReceiveTimeout(3.seconds)
+  deployAndWatch
+
+  def deployAndWatch = {
+    val actorRef = context.actorOf(Props[BoxOffice], "boxOffice")
+    context.watch(actorRef)
+    log.info("switching to maybe active state")
+    context.become(maybeActive(actorRef))
+    context.setReceiveTimeout(Duration.Undefined)
+  }
+
+  def deploying: Receive = {
+    case ReceiveTimeout =>
+      deployAndWatch
+    case msg: Any =>
+      log.error(s"Ignoring message $msg, not ready yet.")
+  }
+
+  def maybeActive(actor: ActorRef): Receive = {
+    case Terminated(actorRef) =>
+      log.info(s"Actor $actorRef terminated.")
+      log.info("switching to deploying state")
+      context.become(deploying)
+      context.setReceiveTimeout(3.seconds)
+      deployAndWatch
+    case msg: Any =>
+      actor.forward(msg)
+  }
+
+  def receive = deploying
 }
 
 class RemoteLookup(path: String) extends Actor with ActorLogging {

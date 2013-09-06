@@ -31,7 +31,7 @@ class RestInterface extends Actor
   def receive = runRoute(routes)
 }
 
-class RemoteRestInterface extends RestInterface with RemoteBoxOfficeCreator {
+class RemoteRestInterface extends RestInterface with ConfiguredRemoteBoxOfficeDeployment {
   
 }
 
